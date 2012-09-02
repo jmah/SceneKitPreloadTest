@@ -1,5 +1,5 @@
 # SceneKit Preload Test
-This project demonstrates preloading materials in SceneKit using a separate `SCNRenderer`. This renderer's OpenGL context shares resources with the `SCNView`'s context.
+This project demonstrates preloading materials in SceneKit using a separate SCNRenderer. This renderer's OpenGL context shares resources with the SCNView's context. This came out of a [discussion on the Apple Developer Forums](https://devforums.apple.com/message/719293) (login required).
 
 This also demonstrates using a custom pixel format such that multi-GPU systems aren't forced to switch (e.g. recent MacBook Pros with both an integrated and discrete graphics card).
 
