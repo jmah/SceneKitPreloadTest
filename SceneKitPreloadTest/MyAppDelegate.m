@@ -14,6 +14,7 @@
 @implementation MyAppDelegate
 {
     SCNBox *_box;
+    SCNNode *_boxNode;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification;
@@ -21,16 +22,9 @@
     SCNScene *scene = [SCNScene scene];
     _box = [SCNBox boxWithWidth:1.0 height:1.0 length:1.0 chamferRadius:0.0];
     [self resetMaterials:nil];
-    SCNNode *boxNode = [SCNNode nodeWithGeometry:_box];
-    [scene.rootNode addChildNode:boxNode];
+    _boxNode = [SCNNode nodeWithGeometry:_box];
+    [scene.rootNode addChildNode:_boxNode];
     self.sceneView.scene = scene;
-
-    CABasicAnimation *rotateAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
-    rotateAnimation.duration = 8.0;
-    rotateAnimation.fromValue = [NSValue valueWithSCNVector4:SCNVector4Make(0.2, 0.3, 0.4, 0.0)];
-    rotateAnimation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0.2, 0.3, 0.4, M_PI * 2.0)];
-    rotateAnimation.repeatCount = HUGE_VALF;
-    [boxNode addAnimation:rotateAnimation forKey:@"tumble"];
 }
 
 - (NSArray *)generateBoxMaterials;
@@ -47,6 +41,24 @@
         [boxMaterials addObject:m];
     }
     return boxMaterials;
+}
+
+- (void)setTumble:(BOOL)tumble;
+{
+    if (_tumble == tumble)
+        return;
+    _tumble = tumble;
+    if (_tumble) {
+        CABasicAnimation *rotateAnimation = [CABasicAnimation animationWithKeyPath:@"rotation"];
+        rotateAnimation.duration = 8.0;
+        rotateAnimation.byValue = [NSValue valueWithSCNVector4:SCNVector4Make(0.2, 0.3, 0.4, M_PI * 2.0)];
+        rotateAnimation.repeatCount = HUGE_VALF;
+        [_boxNode addAnimation:rotateAnimation forKey:@"tumble"];
+    } else {
+        SCNVector4 rotation = _boxNode.presentationNode.rotation;
+        [_boxNode removeAnimationForKey:@"tumble"];
+        _boxNode.rotation = rotation;
+    }
 }
 
 - (IBAction)resetMaterials:(id)sender;

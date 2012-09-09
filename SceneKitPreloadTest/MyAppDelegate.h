@@ -13,8 +13,10 @@
 
 @interface MyAppDelegate : NSObject <NSApplicationDelegate>
 
-@property (assign) IBOutlet NSWindow *window;
+@property (weak) IBOutlet NSWindow *window;
 @property (weak) IBOutlet MySCNView *sceneView;
+
+@property (nonatomic) BOOL tumble;
 
 - (IBAction)resetMaterials:(id)sender;
 - (IBAction)changeBoxMaterial:(id)sender;
