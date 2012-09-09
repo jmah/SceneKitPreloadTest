@@ -81,8 +81,10 @@
 
         CGLSetVirtualScreen(_preloadRenderer.context, mainContextVirtualScreen);
         [_preloadRenderer render];
-        CGLSetCurrentContext(_preloadRenderer.context);
-        glFlush(); // Without this, textures can get corrupted, sometimes.
+        if (!self.disableGLFlushAfterPreload) {
+            CGLSetCurrentContext(_preloadRenderer.context);
+            glFlush(); // Without this, textures can get corrupted, sometimes.
+        }
         _preloadPlane.materials = defaultMaterials; // Don't retain material
     });
 }

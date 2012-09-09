@@ -11,6 +11,8 @@
 
 @interface MySCNView : SCNView
 
+@property (atomic) BOOL disableGLFlushAfterPreload; // Setting this to YES can leave the material in a corrupt state, it seems
+
 - (void)preloadMaterial:(SCNMaterial *)material;
 - (void)tearDownPreloader;
 

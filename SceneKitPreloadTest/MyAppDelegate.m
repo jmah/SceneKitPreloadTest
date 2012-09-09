@@ -95,6 +95,9 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
         @autoreleasepool {
             NSArray *boxMaterials = [self generateBoxMaterials];
+            if (self.sceneView.disableGLFlushAfterPreload)
+                boxMaterials = @[boxMaterials[0]]; // Only use one material to demonstrate bug
+
             for (SCNMaterial *m in boxMaterials)
                 [self.sceneView preloadMaterial:m];
             
