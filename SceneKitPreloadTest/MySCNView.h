@@ -12,5 +12,6 @@
 @interface MySCNView : SCNView
 
 - (void)preloadMaterial:(SCNMaterial *)material;
+- (void)tearDownPreloader;
 
 @end

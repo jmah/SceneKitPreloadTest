@@ -66,6 +66,7 @@
     SCNMaterial *m = [SCNMaterial material];
     m.diffuse.contents = [NSColor greenColor];
     _box.materials = @[m];
+    [self.sceneView tearDownPreloader];
 }
 
 - (IBAction)changeBoxMaterial:(id)sender;

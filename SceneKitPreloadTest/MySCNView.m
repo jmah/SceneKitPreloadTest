@@ -41,11 +41,15 @@
 
 - (void)setOpenGLContext:(NSOpenGLContext *)openGLContext;
 {
+    [self tearDownPreloader]; // Must regenerate additional context to share with this new one
     [super setOpenGLContext:openGLContext];
+}
+
+- (void)tearDownPreloader;
+{
     if (!_preloadQueue)
         return;
     dispatch_async(_preloadQueue, ^{
-        // Must regenerate additional context to share with this new one
         _preloadRenderer = nil;
         _preloadPlane = nil;
     });
