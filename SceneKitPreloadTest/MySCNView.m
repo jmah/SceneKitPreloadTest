@@ -11,7 +11,8 @@
 
 @implementation MySCNView
 {
-    NSOpenGLContext *_preloadContext;
+    dispatch_once_t _preloadQueueOnceToken;
+    dispatch_queue_t _preloadQueue;
     SCNRenderer *_preloadRenderer;
     SCNGeometry *_preloadPlane;
 }
@@ -38,38 +39,59 @@
     return self;
 }
 
-- (void)preparePreloadStuff;
+- (void)setOpenGLContext:(NSOpenGLContext *)openGLContext;
 {
-    if (_preloadRenderer)
+    [super setOpenGLContext:openGLContext];
+    if (!_preloadQueue)
         return;
+    dispatch_async(_preloadQueue, ^{
+        // Must regenerate additional context to share with this new one
+        _preloadRenderer = nil;
+        _preloadPlane = nil;
+    });
+}
 
+- (void)preloadMaterial:(SCNMaterial *)material;
+{
+    dispatch_once(&_preloadQueueOnceToken, ^{
+        _preloadQueue = dispatch_queue_create("com.delicious-monster.SceneKitPreload", DISPATCH_QUEUE_SERIAL);
+        dispatch_set_target_queue(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), _preloadQueue);
+    });
+
+    dispatch_sync(_preloadQueue, ^{
+        if (!self.openGLContext)
+            return; // Too soon, can't preload yet
+        if (!_preloadRenderer)
+            [self setUpPreloadRenderer];
+
+        NSArray *const defaultMaterials = _preloadPlane.materials;
+        _preloadPlane.materials = @[material];
+        [SCNTransaction flush];
+
+        const CGLContextObj mainContext = self.context;
+        GLint mainContextVirtualScreen;
+        // TODO: Handle error return values, perhaps.
+        CGLLockContext(mainContext);
+        CGLGetVirtualScreen(mainContext, &mainContextVirtualScreen);
+        CGLUnlockContext(mainContext);
+
+        CGLSetVirtualScreen(_preloadRenderer.context, mainContextVirtualScreen);
+        [_preloadRenderer render];
+        CGLSetCurrentContext(_preloadRenderer.context);
+        glFlush(); // Without this, textures can get corrupted, sometimes.
+        _preloadPlane.materials = defaultMaterials; // Don't retain material
+    });
+}
+- (void)setUpPreloadRenderer;
+{
     NSParameterAssert(self.openGLContext);
-    _preloadContext = [[NSOpenGLContext alloc] initWithFormat:self.pixelFormat shareContext:self.openGLContext];
-    [_preloadContext makeCurrentContext];
-    //glViewport(0, 0, 100, 100);
-    //GLuint fbo;
-    //glGenFramebuffers(1, &fbo); NSLog(@"Created framebuffer id %u", fbo);
-    //glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    NSOpenGLContext *preloadContext = [[NSOpenGLContext alloc] initWithFormat:self.pixelFormat shareContext:self.openGLContext];
 
-    _preloadRenderer = [SCNRenderer rendererWithContext:_preloadContext.CGLContextObj options:nil];
+    _preloadRenderer = [SCNRenderer rendererWithContext:preloadContext.CGLContextObj options:nil];
     _preloadRenderer.scene = [SCNScene scene];
 
     _preloadPlane = [SCNPlane planeWithWidth:1.0 height:1.0];
     [_preloadRenderer.scene.rootNode addChildNode:[SCNNode nodeWithGeometry:_preloadPlane]];
 }
-
-- (void)preloadMaterial:(SCNMaterial *)material;
-{
-    [self preparePreloadStuff];
-
-    _preloadPlane.firstMaterial = material;
-    [SCNTransaction flush];
-
-    //[_preloadContext makeCurrentContext];
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    [_preloadRenderer render];
-    //glFlush();
-}
-
 
 @end
